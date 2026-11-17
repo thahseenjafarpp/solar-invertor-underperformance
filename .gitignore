@@ -40,3 +40,7 @@ data/*.csv
 data/**/*.csv
 *.csv
 !results/tables/*.csv
+
+# Matplotlib cache
+.mpl_cache/
+results/.mpl_cache/
