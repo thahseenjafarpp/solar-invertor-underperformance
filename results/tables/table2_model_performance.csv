@@ -1,3 +1,5 @@
-Model,RMSE (kW),MAE (kW),R²
-Ridge Regression,67.27,36.37,0.9619
-Random Forest,69.24,35.25,0.9596
+Model,RMSE (kW),MAE (kW),R2
+Simple Linear Regression,73.31,45.5,0.9547
+Multiple Linear Regression,73.72,45.99,0.9542
+Polynomial Regression (Deg 2),66.66,34.15,0.9626
+Random Forest Regressor,69.46,35.88,0.9594

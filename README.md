@@ -1,11 +1,11 @@
-# Solar Inverter Underperformance Identification
+# Solar Inverter Underperformance Analysis
 
-A predictive analytics project investigating weather-based expected-power modeling to identify solar photovoltaic (PV) inverters that consistently underperform, and evaluating the temporal stability of those underperformance flags.
+A basic predictive analytics course project investigating whether weather-based expected-power models and unsupervised clustering can identify solar inverters that consistently underperform, and whether those flags remain stable over time.
 
 ---
 
 ## 1. Problem & Research Question
-Solar power plants rely on multiple multi-string inverters operating in parallel. Because solar irradiance and ambient temperatures fluctuate continuously throughout the day, low power output alone does not indicate whether an inverter is malfunctioning or simply experiencing cloudy conditions.
+Solar photovoltaic (PV) plants operate multiple string inverters in parallel. Because solar irradiance and ambient temperature fluctuate throughout the day, low power output alone does not reveal whether an inverter is underperforming or merely shaded by passing clouds.
 
 **Research Question**:  
 *Can a weather-based expected-power model identify inverters that consistently underperform, and are those underperformance flags stable over time?*
@@ -14,73 +14,69 @@ Solar power plants rely on multiple multi-string inverters operating in parallel
 
 ## 2. Dataset & Attribution
 - **Dataset**: [Solar Power Generation Data (Kaggle)](https://www.kaggle.com/datasets/anikannal/solar-power-generation-data) by Ani Kannal.
-- **Scope**: Two grid-connected solar PV plants in India monitored over 34 consecutive days (May 15, 2020 to June 17, 2020) at 15-minute intervals.
-- **Data Files**:
-  - `Plant_1_Generation_Data.csv` & `Plant_2_Generation_Data.csv`: Inverter-level power generation (`DATE_TIME`, `PLANT_ID`, `SOURCE_KEY`, `DC_POWER`, `AC_POWER`, `DAILY_YIELD`, `TOTAL_YIELD`).
-  - `Plant_1_Weather_Sensor_Data.csv` & `Plant_2_Weather_Sensor_Data.csv`: Plant-level meteorological readings (`DATE_TIME`, `AMBIENT_TEMPERATURE`, `MODULE_TEMPERATURE`, `IRRADIATION`).
+- **Scope**: Plant 1 (22 inverters) monitored over 34 consecutive days (May 15, 2020 to June 17, 2020) at 15-minute intervals.
+- **Files Used**:
+  - `data/Plant_1_Generation_Data.csv`: Inverter-level power generation (`DATE_TIME`, `PLANT_ID`, `SOURCE_KEY`, `DC_POWER`, `AC_POWER`, `DAILY_YIELD`, `TOTAL_YIELD`).
+  - `data/Plant_1_Weather_Sensor_Data.csv`: Weather sensor readings (`DATE_TIME`, `AMBIENT_TEMPERATURE`, `MODULE_TEMPERATURE`, `IRRADIATION`).
+- *(Note: Plant 2 files remain in `data/` for archival reference but are unused in this simplified curriculum project).*
 
 ---
 
-## 3. Methodology
-1. **Data Cleaning & Harmonization**:
-   - Resolved heterogeneous timestamp formats: Plant 1 generation logged as `%d-%m-%Y %H:%M` vs. weather and Plant 2 logged as `%Y-%m-%d %H:%M:%S`.
-   - Verified zero duplicate timestamps per inverter and zero negative irradiation readings. Inner merge lost only 4 rows out of 68,778 in Plant 1 (0.0058% loss) and 0 rows in Plant 2.
-   - **Plant Selection**: While both plants were cleaned and explored in exploratory data analysis (EDA), **Plant 1** was selected for expected-power modeling, inverter ranking, and stability analysis due to its complete inverter-level records and distinct DC/AC scaling.
-2. **Daytime Operational Filtering**:
-   - Filtered for active daylight generation using `IRRADIATION > 0.01 kW/m²`. Nighttime readings (mean AC power 0.22 kW, >99% zero) were removed to avoid biasing regression baselines toward zero.
-3. **Temporal Train/Test Split**:
-   - Split chronologically to avoid future leakage: early 24 days for training (May 15 – June 7; 25,202 rows) and the final 10 days held out for testing (June 8 – June 17; 10,736 rows).
-   - Features strictly excluded any power or yield metrics: `['IRRADIATION', 'MODULE_TEMPERATURE', 'AMBIENT_TEMPERATURE', 'TIME_DECIMAL', 'IRRADIATION_SQ']`.
-4. **Expected-Power Modeling (Pooled Inverter Baseline)**:
-   - The model was trained on all 22 inverters pooled together across Plant 1 to capture the plant-wide expected power curve as a function of weather conditions.
-   - Compared Ridge Linear Regression (L2 regularization) and Random Forest Regressor on the held-out test set.
-5. **Per-Inverter Residual Analysis**:
-   - Defined residual sign convention:
-     $$\text{Residual} = \text{AC\_POWER}_{\text{actual}} - \text{AC\_POWER}_{\text{expected}}$$
-     Negative values indicate that an inverter delivered less power than expected given observed weather conditions.
-   - **Total Lost Energy Calculation**:
-     $$\text{Total Lost Energy (kWh)} = \sum_{i} \max(0, -\text{Residual}_i) \times 0.25\text{ hours}$$
-     Positive residuals (overperformance) are clipped to 0 so they do not cancel out periods of lost production. The 15-minute sampling interval ($0.25\text{ hr}$) converts power deficit (kW) into cumulative energy loss (kWh).
-6. **Temporal Stability Assessment**:
-   - Split the 10-day test window into First Half (June 8–12) and Second Half (June 13–17).
-   - Measured rank stability (Spearman $\rho$, Pearson $r$), flag persistence across thresholds (-10 kW, -15 kW, -20 kW), and 500-iteration bootstrap resampling.
+## 3. Mapping to Course Syllabus Practicals
+
+| Notebook Section | Course Syllabus Topic | Description & Methods Used |
+|---|---|---|
+| **Section 1** | **Practical 1: Exploring Data** | Data loading, variable types, summary statistics, date range inspection |
+| **Section 2** | **Practical 2: Data Preprocessing** | Timestamp merging, missing values, numeric vs categorical identification, daytime filtering (`IRRADIATION > 0.01`), Min-Max scaling |
+| **Section 3** | **Practical 3: Correlation & Regression** | Correlation matrix heatmap, Simple Linear Regression, Multiple Linear Regression, Polynomial Regression (deg 2), statsmodels OLS summary |
+| **Section 4** | **Practical 10: Model Performance & Ensemble** | Random Forest Regressor, holdout evaluation (RMSE, MAE, $R^2$), model comparison table |
+| **Section 5** | **Residual Analysis** | Residual calculation ($\text{Actual} - \text{Expected}$), underperformance ranking, low-reading percentage |
+| **Section 6** | **Practical 6: Clustering** | Unsupervised K-Means clustering ($k=2$ and $k=3$), inertia elbow plot, identifying low-performance group |
+| **Section 7** | **Stability Analysis** | First-half vs Second-half split, Spearman rank correlation, persistent cluster membership |
+| **Section 8** | **Summary & Verification Checks** | Automated self-checks (leakage, chronological split, file existence) and limitations |
 
 ---
 
-## 4. Key Results
+## 4. Key Predictive Analytics Results
 
-### Expected-Power Model Performance
-Both models achieved high predictive accuracy on the held-out 10-day test set without target leakage ($R^2 < 0.99$):
+### A. Model Evaluation Comparison (Held-Out 10-Day Test Set)
+All models were evaluated on the same 10,736 held-out test rows (June 8–17) with strictly no target leakage ($R^2 < 0.99$):
 
-| Model | RMSE (kW) | MAE (kW) | $R^2$ |
-|---|---|---|---|
-| **Ridge Regression** | 67.27 | 36.37 | **0.9619** |
-| **Random Forest** | 69.24 | 35.25 | **0.9596** |
+| Model | Input Features | RMSE (kW) | MAE (kW) | $R^2$ |
+|---|---|---|---|---|
+| **Simple Linear Regression** | `IRRADIATION` only | 73.31 | 45.50 | 0.9547 |
+| **Multiple Linear Regression** | Weather + Hour (MinMax scaled) | 73.72 | 45.99 | 0.9542 |
+| **Polynomial Regression (Deg 2)** | Degree 2 polynomial terms | 66.66 | 34.15 | **0.9626** |
+| **Random Forest Regressor** | 100 trees, max depth 10 | 69.46 | 35.88 | **0.9594** |
 
-![Model Actual vs Predicted](results/figures/fig5_model_actual_vs_predicted.png)
+![Correlation Matrix](results/figures/fig1_correlation_heatmap.png)
+![Actual vs Predicted](results/figures/fig4_actual_vs_predicted.png)
 
-### Inverter Underperformance Ranking
-Across all 22 inverters (each with 488 daytime test readings), two inverters exhibited chronic, severe underperformance:
+### B. Inverter Underperformance Ranking
+Using the Random Forest expected-power model, residuals ($\text{Residual} = \text{Actual} - \text{Expected}$) identify two severe underperformers:
 
-| Rank | Inverter ID | Mean Actual (kW) | Mean Expected (kW) | Mean Residual (kW) | Median Residual (kW) | Deficit Rate (< -20 kW) | Total Lost Energy (kWh) |
-|---|---|---|---|---|---|---|---|
-| **1** | `bvBOhCH3iADSZry` (`Inv_01`) | 496.07 | 556.90 | **-60.83** | -25.24 | **55.53%** | 7,911.72 |
-| **2** | `1BY6WEcLGh8j5v7` (`Inv_02`) | 502.20 | 556.90 | **-54.70** | -19.10 | **48.98%** | 7,396.23 |
-| **3** | `ih0vzX44oOqAx2f` (`Inv_03`) | 553.95 | 556.90 | **-2.94** | -1.71 | 21.93% | 1,797.16 |
-| **...** | ... | ... | ... | ... | ... | ... | ... |
-| **22** | `adLQvlD726eNBSB` (`Inv_22`) | 583.29 | 556.90 | **+26.39** | +20.06 | 9.02% | 827.49 |
+| Rank | Inverter ID | Short ID | Test Readings | Mean Residual (kW) | Median Residual (kW) | Deficit Rate (< -20 kW) |
+|---|---|---|---|---|---|---|
+| **1** | `bvBOhCH3iADSZry` | `Inv_bvBO` | 488 | **-60.19** | -25.50 | **56.35%** |
+| **2** | `1BY6WEcLGh8j5v7` | `Inv_1BY6` | 488 | **-54.06** | -21.43 | **52.05%** |
+| **3** | `ih0vzX44oOqAx2f` | `Inv_ih0v` | 488 | **-2.30** | -1.70 | 22.75% |
+| **...** | ... | ... | ... | ... | ... | ... |
+| **22** | `adLQvlD726eNBSB` | `Inv_adLQ` | 488 | **+27.03** | +19.56 | 9.02% |
 
-![Residual Distribution per Inverter](results/figures/fig6_residual_distribution_per_inverter.png)
+![Inverter Mean Residual](results/figures/fig5_inverter_mean_residual.png)
 
-### Flag Stability Over Time
-- **Rank Correlation**: Spearman $\rho = 0.7832$ ($p = 1.63 \times 10^{-5}$) and Pearson $r = 0.9399$ between First-Half and Second-Half mean residuals.
-- **Persistence Across Halves**:
-  - At the **< -20 kW threshold**: Inverters `bvBO` and `1BY6` were flagged in both halves with **100% persistent overlap** (Jaccard similarity = 1.0000).
-  - At the **< -15 kW threshold**: Exactly the same 2 inverters persisted across both halves (Jaccard = 1.0000).
-  - Across the **Bottom 3 Inverters**: 2 out of 3 inverters persisted (Jaccard = 0.5000).
-- **Conclusion**: Severe underperformance flags are remarkably stable over time and provide reliable targets for dispatching field maintenance teams.
+### C. K-Means Clustering ($k=3$)
+- **Elbow Analysis**: Inertia drops from $2.6351$ ($k=1$) to $0.2457$ ($k=2$) and $0.0915$ ($k=3$).
+- **Cluster Segmentation**:
+  - **Low-Performance Cluster (Cluster 1)**: Inverters `bvBO` and `1BY6` (Mean Residual = **-57.12 kW**, Low Readings = **54.20%**).
+  - **Average Cluster (Cluster 2)**: 11 inverters (Mean Residual = **+6.09 kW**, Low Readings = **17.08%**).
+  - **High-Performance Cluster (Cluster 0)**: 9 inverters (Mean Residual = **+18.03 kW**, Low Readings = **11.82%**).
 
-![Stability Half 1 vs Half 2](results/figures/fig8_stability_half1_vs_half2.png)
+![K-Means Clusters](results/figures/fig8_kmeans_clusters.png)
+
+### D. Temporal Stability Across Halves
+- **Spearman Rank Correlation**: $\rho = 0.7832$ ($p = 1.63 \times 10^{-5}$) between First-Half (June 8–12) and Second-Half (June 13–17) mean residuals.
+- **Persistent Outliers**: Both `bvBO` and `1BY6` are placed in the low-performance group in **both halves** (100% persistent).
 
 ---
 
@@ -98,32 +94,23 @@ pip install -r requirements.txt
 ```
 
 ### Step 3: Place Dataset Files
-Download the Kaggle dataset and **place the dataset files in `data/`**:
+Place the downloaded Kaggle CSV files in `data/`:
 - `data/Plant_1_Generation_Data.csv`
 - `data/Plant_1_Weather_Sensor_Data.csv`
-- `data/Plant_2_Generation_Data.csv`
-- `data/Plant_2_Weather_Sensor_Data.csv`
 
-*(Note: Raw CSVs are git-ignored and will not be tracked).*
+### Step 4: Open and Run the Notebook
+Open [notebooks/solar_analysis.ipynb](notebooks/solar_analysis.ipynb) in VS Code or Jupyter Lab, select your Python kernel, and click **"Run All"**.  
+All 8 figures will be saved in `results/figures/` and all 5 tables in `results/tables/`.
 
-### Step 4: Execute Analysis
-Run the standalone script or open the Jupyter notebook:
-```bash
-python notebooks/solar_analysis.py
-```
-Or execute the notebook directly:
-```bash
-jupyter nbconvert --to notebook --execute --inplace notebooks/solar_analysis.ipynb
-```
-All 8 figures will be generated in `results/figures/` and 4 tables in `results/tables/`.
+For oral presentation and concept walkthroughs, see [EXPLAIN.md](EXPLAIN.md).
 
 ---
 
-## 6. Limitations
-1. **Observation Duration**: The dataset spans 34 continuous days. Long-term seasonal degradation, seasonal solar altitude shifts, and multi-month soiling cycles cannot be observed.
-2. **Plant Scope**: Detailed expected-power modeling, residual ranking, and temporal stability analysis were conducted on **Plant 1** (due to differing electrical configurations, unit scaling, and inverter architectures between Plant 1 and Plant 2). Findings should be re-evaluated when adapting to Plant 2.
-3. **Pooled Inverter Training Baseline**: The expected-power model was trained on all 22 inverters pooled together to establish the plant-wide baseline. Consequently, the model captures the collective average performance of the array. Residuals indicate *relative* underperformance compared to peer inverters under identical ambient conditions; systemic plant-wide anomalies (such as utility grid curtailment, uniform atmospheric haze, or simultaneous plant-wide soiling) affect all inverters equally and cannot be detected as outlier residuals.
-4. **No Fault Labels**: The dataset provides operational sensor logs without maintenance logs or ground-truth fault diagnostics. Therefore, model flags signify **"inspect for maintenance"** (prioritized operational inspection) rather than a definitive diagnosis of specific component failure.
+## 6. Operational Limitations
+1. **Observation Duration**: 34 continuous days captures short-term behavior but cannot capture seasonal degradation or long-term soiling.
+2. **Plant 1 Only**: Findings apply specifically to Plant 1's physical and electrical layout.
+3. **No Fault Labels**: Without maintenance logs, underperformance flags mean **"inspect for maintenance"** rather than definitive equipment failure.
+4. **Pooled Training Baseline**: The expected-power model was trained on all 22 inverters pooled together, establishing a peer-relative baseline; systemic plant-wide drops (e.g. grid curtailment or uniform dust) affect all inverters and cannot be isolated from weather alone.
 
 ---
 

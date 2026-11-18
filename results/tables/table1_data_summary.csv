@@ -1,3 +1,2 @@
-Plant,Raw Gen Rows,Raw Wtr Rows,Merged Rows,Merge Loss (%),Inverters,Start Date,End Date,Min Irradiation
-Plant 1,68778,3182,68774,0.0058,22,2020-05-15 00:00:00,2020-06-17 23:45:00,0.0
-Plant 2,67698,3259,67698,0.0,22,2020-05-15 00:00:00,2020-06-17 23:45:00,0.0
+Plant,Raw Generation Rows,Raw Weather Rows,Merged Rows,Daytime Filtered Rows,Train Rows,Test Rows,Inverter Count
+Plant 1,68778,3182,68774,35938,25202,10736,22
