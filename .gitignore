@@ -46,9 +46,16 @@ data/**/*.csv
 results/.mpl_cache/
 
 # Jupyter temporary directories
+.jupyter
 .jupyter/
+.jupyter_data
 .jupyter_data/
+.jupyter_runtime
 .jupyter_runtime/
 
 # IPython directory
+.ipython
 .ipython/
+
+# Test virtual environment
+test_env/

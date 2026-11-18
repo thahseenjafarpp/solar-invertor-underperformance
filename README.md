@@ -25,17 +25,22 @@ Solar power plants rely on multiple multi-string inverters operating in parallel
 1. **Data Cleaning & Harmonization**:
    - Resolved heterogeneous timestamp formats: Plant 1 generation logged as `%d-%m-%Y %H:%M` vs. weather and Plant 2 logged as `%Y-%m-%d %H:%M:%S`.
    - Verified zero duplicate timestamps per inverter and zero negative irradiation readings. Inner merge lost only 4 rows out of 68,778 in Plant 1 (0.0058% loss) and 0 rows in Plant 2.
+   - **Plant Selection**: While both plants were cleaned and explored in exploratory data analysis (EDA), **Plant 1** was selected for expected-power modeling, inverter ranking, and stability analysis due to its complete inverter-level records and distinct DC/AC scaling.
 2. **Daytime Operational Filtering**:
    - Filtered for active daylight generation using `IRRADIATION > 0.01 kW/m²`. Nighttime readings (mean AC power 0.22 kW, >99% zero) were removed to avoid biasing regression baselines toward zero.
 3. **Temporal Train/Test Split**:
    - Split chronologically to avoid future leakage: early 24 days for training (May 15 – June 7; 25,202 rows) and the final 10 days held out for testing (June 8 – June 17; 10,736 rows).
    - Features strictly excluded any power or yield metrics: `['IRRADIATION', 'MODULE_TEMPERATURE', 'AMBIENT_TEMPERATURE', 'TIME_DECIMAL', 'IRRADIATION_SQ']`.
-4. **Expected-Power Modeling**:
+4. **Expected-Power Modeling (Pooled Inverter Baseline)**:
+   - The model was trained on all 22 inverters pooled together across Plant 1 to capture the plant-wide expected power curve as a function of weather conditions.
    - Compared Ridge Linear Regression (L2 regularization) and Random Forest Regressor on the held-out test set.
 5. **Per-Inverter Residual Analysis**:
    - Defined residual sign convention:
      $$\text{Residual} = \text{AC\_POWER}_{\text{actual}} - \text{AC\_POWER}_{\text{expected}}$$
      Negative values indicate that an inverter delivered less power than expected given observed weather conditions.
+   - **Total Lost Energy Calculation**:
+     $$\text{Total Lost Energy (kWh)} = \sum_{i} \max(0, -\text{Residual}_i) \times 0.25\text{ hours}$$
+     Positive residuals (overperformance) are clipped to 0 so they do not cancel out periods of lost production. The 15-minute sampling interval ($0.25\text{ hr}$) converts power deficit (kW) into cumulative energy loss (kWh).
 6. **Temporal Stability Assessment**:
    - Split the 10-day test window into First Half (June 8–12) and Second Half (June 13–17).
    - Measured rank stability (Spearman $\rho$, Pearson $r$), flag persistence across thresholds (-10 kW, -15 kW, -20 kW), and 500-iteration bootstrap resampling.
@@ -116,8 +121,9 @@ All 8 figures will be generated in `results/figures/` and 4 tables in `results/t
 
 ## 6. Limitations
 1. **Observation Duration**: The dataset spans 34 continuous days. Long-term seasonal degradation, seasonal solar altitude shifts, and multi-month soiling cycles cannot be observed.
-2. **Plant Scope**: Analysis is based on two utility-scale plants in India; inverter-to-weather baselines vary by plant technology and inverter topology (e.g. DC/AC scaling factors).
-3. **No Fault Labels**: The dataset provides operational sensor logs without maintenance logs or ground-truth fault diagnostics. Therefore, model flags signify **"inspect for maintenance"** (prioritized operational inspection) rather than a definitive diagnosis of specific component failure.
+2. **Plant Scope**: Detailed expected-power modeling, residual ranking, and temporal stability analysis were conducted on **Plant 1** (due to differing electrical configurations, unit scaling, and inverter architectures between Plant 1 and Plant 2). Findings should be re-evaluated when adapting to Plant 2.
+3. **Pooled Inverter Training Baseline**: The expected-power model was trained on all 22 inverters pooled together to establish the plant-wide baseline. Consequently, the model captures the collective average performance of the array. Residuals indicate *relative* underperformance compared to peer inverters under identical ambient conditions; systemic plant-wide anomalies (such as utility grid curtailment, uniform atmospheric haze, or simultaneous plant-wide soiling) affect all inverters equally and cannot be detected as outlier residuals.
+4. **No Fault Labels**: The dataset provides operational sensor logs without maintenance logs or ground-truth fault diagnostics. Therefore, model flags signify **"inspect for maintenance"** (prioritized operational inspection) rather than a definitive diagnosis of specific component failure.
 
 ---
 

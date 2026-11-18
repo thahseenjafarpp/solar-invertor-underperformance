@@ -46,6 +46,8 @@
 ## Phase 3: Expected-Power Modeling
 - **Date/Time**: 2026-11-18
 - **Decisions**:
+  - **Plant Selection**: Plant 1 was used exclusively for expected-power modeling, inverter ranking, and stability analysis. (Plant 2 was cleaned and compared during Phase 1 and 2 EDA, but features different unit conventions and scaling).
+  - **Pooled Inverter Training**: The expected-power model was trained on all 22 inverters pooled together across Plant 1 to learn the plant-wide baseline.
   - Target variable: `AC_POWER` (inverter AC power output in kW).
   - Feature set: `['IRRADIATION', 'MODULE_TEMPERATURE', 'AMBIENT_TEMPERATURE', 'TIME_DECIMAL', 'IRRADIATION_SQ']`.
   - Leakage Guard: Verified features contain zero power, current, or yield columns.
@@ -61,9 +63,10 @@
 
 ## Phase 4: Per-Inverter Residual Analysis and Ranking
 - **Date/Time**: 2026-11-18
-- **Residual Sign Convention**:
+- **Residual Sign Convention & Deficit Calculation**:
   - $\text{Residual} = \text{AC\_POWER}_{\text{actual}} - \text{AC\_POWER}_{\text{expected}}$
   - $\text{Residual} < 0$ implies underperformance (inverter produced less AC power than expected for prevailing weather).
+  - **Total Lost Energy Calculation**: $\sum_{i} \max(0, -\text{Residual}_i) \times 0.25\text{ hours}$ (kWh). Positive residuals are clipped to 0 so outperforming intervals do not offset deficits; 15-minute readings are multiplied by $0.25\text{ hr}$ to yield energy in kilowatt-hours (kWh).
 - **Test Sample Size per Inverter**:
   - Exactly 488 daytime test observations for each of the 22 inverters (minimum required threshold was 200).
 - **Underperformance Ranking Key Numbers**:
