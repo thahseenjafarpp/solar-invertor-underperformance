@@ -12,7 +12,9 @@ import numpy as np
 import pandas as pd
 
 # Ensure execution working directory is repository root whether run from repo root or notebooks/
-if os.path.basename(os.getcwd()) == 'notebooks':
+if not os.path.exists('data') and os.path.exists('../data'):
+    os.chdir('..')
+elif os.path.basename(os.getcwd()) == 'notebooks':
     os.chdir('..')
 
 # Set matplotlib cache directory within workspace to avoid sandbox permission warnings
@@ -45,7 +47,10 @@ os.makedirs('results/tables', exist_ok=True)
 
 # %%
 # Define file paths and explicit timestamp parsing formats
-DATA_DIR = 'data'
+if not os.path.exists('data') and os.path.exists('../data'):
+    os.chdir('..')
+
+DATA_DIR = 'data' if os.path.exists('data') else '../data'
 p1_gen_path = os.path.join(DATA_DIR, 'Plant_1_Generation_Data.csv')
 p1_wtr_path = os.path.join(DATA_DIR, 'Plant_1_Weather_Sensor_Data.csv')
 p2_gen_path = os.path.join(DATA_DIR, 'Plant_2_Generation_Data.csv')
