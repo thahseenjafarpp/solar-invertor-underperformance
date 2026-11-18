@@ -44,3 +44,11 @@ data/**/*.csv
 # Matplotlib cache
 .mpl_cache/
 results/.mpl_cache/
+
+# Jupyter temporary directories
+.jupyter/
+.jupyter_data/
+.jupyter_runtime/
+
+# IPython directory
+.ipython/
